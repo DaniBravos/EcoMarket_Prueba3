@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.microservice.product.model.Product;
 import com.microservice.product.service.IProductService;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 
 
 
@@ -22,6 +24,7 @@ import com.microservice.product.service.IProductService;
 
 @RestController
 @RequestMapping("/api/v1/product")
+@Tag(name = "Controlador de Productos", description = "Operaciones del microservicio de productos de Eco-Market")
 public class productController {
 
 
@@ -29,19 +32,21 @@ public class productController {
     private IProductService iProductService;
 
     
-    @PostMapping("/create")
+    @PostMapping("/create")  //Agregar de Producto
     @ResponseStatus(HttpStatus.CREATED)
     public void saveProduct(@RequestBody Product product){
         iProductService.save(product);
     }
 
     @GetMapping("/all")
+    @Tag(name = "Controlador de Listado de Productos", description = "Proporciona el listado completo de productos disponibles en el sistema Eco-Market")
     public ResponseEntity<?> findAllProduct(){
         return ResponseEntity.ok(iProductService.findAll());
     }
     
 
-    @GetMapping("/search/{id}")    
+    @GetMapping("/search/{id}") 
+    @Tag(name = "Controlador de Búsqueda por ID", description = "Permite buscar productos específicos mediante su id único en Eco-Market")   
     public ResponseEntity<?> findById(@PathVariable Long id){
         return ResponseEntity.ok(iProductService.findById(id));
     }
@@ -54,6 +59,7 @@ public class productController {
     }
 
     @DeleteMapping("/delete/{id}")
+    @Tag(name = "Controlador de Eliminación de Producto", description = "Permite eliminar un producto específico del sistema Eco-Market mediante su ID")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteProduct(@PathVariable Long id) {
     iProductService.delete(id);

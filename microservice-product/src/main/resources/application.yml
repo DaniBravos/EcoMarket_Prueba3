@@ -1,5 +1,25 @@
-spring:
+spring: 
   application:
     name: msvc-product
   config:
     import: optional:configserver:http://localhost:8888
+  profiles:
+    active: test
+  datasource:
+    url: jdbc:mysql://localhost:3306/productdb  
+    username: root
+    password: ""  
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  h2:
+    console:
+      enabled: true
+
+  # Configuración para Swagger (Springdoc OpenAPI)
+springdoc:
+    api-docs:
+      enabled: true
+    swagger-ui:
+      enabled: true
+      path: /doc/swagger-ui.html  # Cambia el path si deseas otro nombre de URL
+
