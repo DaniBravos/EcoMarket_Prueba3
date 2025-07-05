@@ -10,8 +10,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.http.ResponseEntity;
-import org.springframework.http.HttpStatus;
 
 import java.util.Arrays;
 import java.util.List;
@@ -59,8 +57,11 @@ public class EcoMarketControllerTest {
                 .jefeTelefono("98765432")
                 .build()
         );
-
         when(ecoMarketService.findAll()).thenReturn(mockList);
+        var response = ecoMarketController.findAllEcoMarkets();
+        assertNotNull(response);
+        assertTrue(response.getLinks().hasLink("self"));
+        assertEquals(2, response.getContent().size());
     }
 
     // Test 2: Buscar por ID
@@ -77,13 +78,11 @@ public class EcoMarketControllerTest {
             .jefeCorreo("pedro@mercado.cl")
             .jefeTelefono("5555555")
             .build();
-
         when(ecoMarketService.findById(1L)).thenReturn(mercado);
-
-        ResponseEntity<?> response = ecoMarketController.findById(1L);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(mercado, response.getBody());
+        var response = ecoMarketController.findById(1L);
+        assertNotNull(response);
+        assertEquals(mercado, response.getContent());
+        assertTrue(response.getLinks().hasLink("self"));
     }
 
     // Test 3: Guardar nuevo local
@@ -100,48 +99,43 @@ public class EcoMarketControllerTest {
             .jefeCorreo("laura@nuevo.cl")
             .jefeTelefono("3333333")
             .build();
-
         doNothing().when(ecoMarketService).save(nuevo);
-
-        ecoMarketController.saveEcoMarket(nuevo);
-
+        var response = ecoMarketController.saveEcoMarket(nuevo);
         verify(ecoMarketService, times(1)).save(nuevo);
+        assertNotNull(response);
+        assertEquals(nuevo, response.getContent());
+        assertTrue(response.getLinks().hasLink("self"));
     }
 
     // Test 4: Eliminar por ID
     @Test
     public void testDeleteEcoMarket() {
         Long id = 1L;
-
         doNothing().when(ecoMarketService).delete(id);
-
-        ecoMarketController.deleteEcoMarket(id);
-
+        var response = ecoMarketController.deleteEcoMarket(id);
         verify(ecoMarketService, times(1)).delete(id);
+        assertNotNull(response);
+        assertEquals("EcoMarket eliminado", response.getContent());
+        assertTrue(response.getLinks().hasLink("all-ecomarkets"));
     }
 
     // Test 5: Buscar productos por ID de local
     @Test
     public void testFindProductByIdEcoMarket() {
         Long idEcoMarket = 1L;
-
         List<ProductDTO> productos = Arrays.asList(
             ProductDTO.builder().id(1L).nombre("Lechuga").build(),
             ProductDTO.builder().id(2L).nombre("Tomate").build()
         );
-
         ProductByEcoMarketResponse mockResponse = ProductByEcoMarketResponse.builder()
             .ecoMarketName("Feria Modelo")
             .jefeNombre("Juan Pérez")
             .productDTOList(productos)
             .build();
-
         when(ecoMarketService.findProductByIdEcoMarket(idEcoMarket)).thenReturn(mockResponse);
-
-        ResponseEntity<?> response = ecoMarketController.findProductByIdEcoMarket(idEcoMarket);
-
+        var response = ecoMarketController.findProductByIdEcoMarket(idEcoMarket);
         assertNotNull(response);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
+        assertEquals(mockResponse, response.getContent());
+        assertTrue(response.getLinks().hasLink("self"));
     }
 }

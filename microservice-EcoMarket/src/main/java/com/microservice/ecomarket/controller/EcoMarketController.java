@@ -1,9 +1,12 @@
 package com.microservice.ecomarket.controller;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.CollectionModel;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -23,31 +26,64 @@ public class EcoMarketController {
     @Autowired
     private IEcoMarketService ecoMarketService;
 
+
     @PostMapping("/create")
     @ResponseStatus(HttpStatus.CREATED)
-    public void saveEcoMarket(@RequestBody EcoMarket ecoMarket) {
+    public EntityModel<EcoMarket> saveEcoMarket(@RequestBody EcoMarket ecoMarket) {
         ecoMarketService.save(ecoMarket);
+        EntityModel<EcoMarket> resource = EntityModel.of(ecoMarket,
+            linkTo(methodOn(EcoMarketController.class).findById(ecoMarket.getId())).withSelfRel(),
+            linkTo(methodOn(EcoMarketController.class).findAllEcoMarkets()).withRel("all-ecomarkets")
+        );
+        return resource;
     }
+
 
     @GetMapping("/all")
-    public ResponseEntity<List<EcoMarket>> findAllEcoMarkets() {
-        return ResponseEntity.ok(ecoMarketService.findAll());
+    public CollectionModel<EntityModel<EcoMarket>> findAllEcoMarkets() {
+        List<EntityModel<EcoMarket>> ecoMarkets = ecoMarketService.findAll().stream()
+            .map(ecoMarket -> EntityModel.of(ecoMarket,
+                linkTo(methodOn(EcoMarketController.class).findById(ecoMarket.getId())).withSelfRel(),
+                linkTo(methodOn(EcoMarketController.class).deleteEcoMarket(ecoMarket.getId())).withRel("delete"),
+                linkTo(methodOn(EcoMarketController.class).findProductByIdEcoMarket(ecoMarket.getId())).withRel("products")
+            ))
+            .collect(Collectors.toList());
+
+        return CollectionModel.of(ecoMarkets,
+            linkTo(methodOn(EcoMarketController.class).findAllEcoMarkets()).withSelfRel()
+        );
     }
+
 
     @GetMapping("/search/{id}")
-    public ResponseEntity<?> findById(@PathVariable Long id) {
-        return ResponseEntity.ok(ecoMarketService.findById(id));
+    public EntityModel<EcoMarket> findById(@PathVariable Long id) {
+        EcoMarket ecoMarket = ecoMarketService.findById(id);
+        return EntityModel.of(ecoMarket,
+            linkTo(methodOn(EcoMarketController.class).findById(id)).withSelfRel(),
+            linkTo(methodOn(EcoMarketController.class).findAllEcoMarkets()).withRel("all-ecomarkets"),
+            linkTo(methodOn(EcoMarketController.class).deleteEcoMarket(id)).withRel("delete"),
+            linkTo(methodOn(EcoMarketController.class).findProductByIdEcoMarket(id)).withRel("products")
+        );
     }
 
+
     @GetMapping("/search-product/{idEcoMarket}")
-    public ResponseEntity<?> findProductByIdEcoMarket(@PathVariable Long idEcoMarket) {
-        return ResponseEntity.ok(ecoMarketService.findProductByIdEcoMarket(idEcoMarket));
+    public EntityModel<Object> findProductByIdEcoMarket(@PathVariable Long idEcoMarket) {
+        Object response = ecoMarketService.findProductByIdEcoMarket(idEcoMarket);
+        return EntityModel.of(response,
+            linkTo(methodOn(EcoMarketController.class).findProductByIdEcoMarket(idEcoMarket)).withSelfRel(),
+            linkTo(methodOn(EcoMarketController.class).findById(idEcoMarket)).withRel("ecomarket")
+        );
     }
     
+
     @DeleteMapping("/delete/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteEcoMarket(@PathVariable Long id) {
-    ecoMarketService.delete(id);
+    public EntityModel<String> deleteEcoMarket(@PathVariable Long id) {
+        ecoMarketService.delete(id);
+        return EntityModel.of("EcoMarket eliminado",
+            linkTo(methodOn(EcoMarketController.class).findAllEcoMarkets()).withRel("all-ecomarkets")
+        );
     }
 
 

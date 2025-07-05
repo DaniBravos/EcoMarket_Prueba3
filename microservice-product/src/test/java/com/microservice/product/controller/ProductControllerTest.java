@@ -8,8 +8,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 
 import java.util.Arrays;
 import java.util.List;
@@ -54,10 +52,10 @@ public class ProductControllerTest {
 
         when(iProductService.findAll()).thenReturn(mockList);
 
-        ResponseEntity<?> response = productController.findAllProduct();
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(mockList, response.getBody());
+        var response = productController.findAllProduct();
+        assertNotNull(response);
+        assertTrue(response.getLinks().hasLink("self"));
+        assertEquals(2, response.getContent().size());
     }
 
     // Test 2: Buscar producto por ID
@@ -74,10 +72,10 @@ public class ProductControllerTest {
 
         when(iProductService.findById(1L)).thenReturn(producto);
 
-        ResponseEntity<?> response = productController.findById(1L);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(producto, response.getBody());
+        var response = productController.findById(1L);
+        assertNotNull(response);
+        assertEquals(producto, response.getContent());
+        assertTrue(response.getLinks().hasLink("self"));
     }
 
     // Test 3: Guardar producto
@@ -94,9 +92,11 @@ public class ProductControllerTest {
 
         doNothing().when(iProductService).save(nuevo);
 
-        productController.saveProduct(nuevo);
-
+        var response = productController.saveProduct(nuevo);
         verify(iProductService, times(1)).save(nuevo);
+        assertNotNull(response);
+        assertEquals(nuevo, response.getContent());
+        assertTrue(response.getLinks().hasLink("self"));
     }
 
     // Test 4: Eliminar producto
@@ -106,9 +106,11 @@ public class ProductControllerTest {
 
         doNothing().when(iProductService).delete(id);
 
-        productController.deleteProduct(id);
-
+        var response = productController.deleteProduct(id);
         verify(iProductService, times(1)).delete(id);
+        assertNotNull(response);
+        assertEquals("Producto eliminado", response.getContent());
+        assertTrue(response.getLinks().hasLink("all-products"));
     }
 
     // Test 5: Buscar productos por ID de EcoMarket
@@ -123,10 +125,18 @@ public class ProductControllerTest {
 
         when(iProductService.findProductByIdEcoMarket(idEcoMarket)).thenReturn(productos);
 
-        ResponseEntity<?> response = productController.findProductByIdEcoMarket(idEcoMarket);
-
+        var response = productController.findProductByIdEcoMarket(idEcoMarket);
         assertNotNull(response);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(productos, response.getBody());
+        // Verifica que la colección tenga el mismo número de productos
+        assertEquals(productos.size(), response.getContent().size());
+        // Verifica que cada EntityModel contenga el producto esperado
+        for (int i = 0; i < productos.size(); i++) {
+            Product expected = productos.get(i);
+            Product actual = response.getContent().stream().toList().get(i).getContent();
+            assertEquals(expected, actual);
+        }
+        // Verifica enlaces HATEOAS
+        assertTrue(response.getLinks().hasLink("self"));
+        assertTrue(response.getLinks().hasLink("all-products"));
     }
 }
